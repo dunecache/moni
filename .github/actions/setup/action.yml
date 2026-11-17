@@ -1,0 +1,44 @@
+name: Setup moni
+description: Install Flutter and generate any missing native platform folders.
+
+inputs:
+  flutter-version:
+    description: Flutter SDK version to install.
+    required: false
+    default: '3.50.0'
+
+runs:
+  using: composite
+  steps:
+    - name: Install Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: stable
+        version: ${{ inputs.flutter-version }}
+        cache: true
+
+    - name: Show Flutter version
+      shell: bash
+      run: flutter --version
+
+    - name: Generate missing platform folders
+      shell: bash
+      run: |
+        set -euo pipefail
+        missing=""
+        for platform in android ios linux macos windows; do
+          if [ ! -d "$platform" ]; then
+            if [ -n "$missing" ]; then missing="$missing,"; fi
+            missing="$missing$platform"
+          fi
+        done
+        if [ -n "$missing" ]; then
+          echo "Generating platform folders: $missing"
+          flutter create --project-name moni --org com.moni --platforms="$missing" .
+        else
+          echo "All platform folders are already present."
+        fi
+
+    - name: Install dependencies
+      shell: bash
+      run: flutter pub get

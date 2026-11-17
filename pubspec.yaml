@@ -1,0 +1,44 @@
+name: moni
+description: A quiet, local-first music listening app built on the Kanso Matcha design language.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State
+  flutter_riverpod: ^2.6.1
+
+  # Playback (background service + notification + media session)
+  audio_service: ^0.18.18
+  audio_session: ^0.1.24
+  just_audio: ^0.10.4
+
+  # Local library
+  audio_metadata_reader: ^1.8.1
+  path_provider: ^2.1.5
+  permission_handler: ^11.3.1
+
+  # Persistence
+  shared_preferences: ^2.3.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  generate: false
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/InterVariable.ttf
+    - family: Google Sans Flex
+      fonts:
+        - asset: assets/fonts/GoogleSansFlex.ttf
