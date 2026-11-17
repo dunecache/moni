@@ -1,5 +1,5 @@
 name: Setup moni
-description: Install Flutter and generate any missing native platform folders.
+description: Install Flutter, generate missing platform folders and configure native audio sessions.
 
 inputs:
   flutter-version:
@@ -38,6 +38,108 @@ runs:
         else
           echo "All platform folders are already present."
         fi
+
+    - name: Configure native audio sessions
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+        import re
+        import plistlib
+
+        manifest = Path('android/app/src/main/AndroidManifest.xml')
+        if manifest.exists():
+            text = manifest.read_text()
+
+            # Ensure the tools namespace is declared.
+            start = text.index('<manifest')
+            end = text.index('>', start)
+            tag = text[start:end]
+            if 'xmlns:tools' not in tag:
+                tag = tag.replace(
+                    '<manifest ',
+                    '<manifest xmlns:tools="http://schemas.android.com/tools" ',
+                    1,
+                )
+                text = text[:start] + tag + text[end:]
+                end = start + len(tag)
+
+            permissions = [
+                'android.permission.WAKE_LOCK',
+                'android.permission.FOREGROUND_SERVICE',
+                'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+                'android.permission.POST_NOTIFICATIONS',
+                'android.permission.READ_MEDIA_AUDIO',
+                'android.permission.READ_EXTERNAL_STORAGE',
+            ]
+            lines = [
+                '    <uses-permission android:name="%s" />' % p
+                for p in permissions
+                if 'android:name="%s"' % p not in text
+            ]
+            if lines:
+                insert_at = text.index('>', text.index('<manifest')) + 1
+                text = text[:insert_at] + '\n' + '\n'.join(lines) + text[insert_at:]
+
+            # audio_service needs its own Activity to share the FlutterEngine.
+            text = text.replace(
+                'android:name=".MainActivity"',
+                'android:name="com.ryanheise.audioservice.AudioServiceActivity"',
+            )
+
+            if 'com.ryanheise.audioservice.AudioService"' not in text:
+                block = '''            <service
+                android:name="com.ryanheise.audioservice.AudioService"
+                android:foregroundServiceType="mediaPlayback"
+                android:exported="true"
+                tools:ignore="Instantiatable">
+              <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+              </intent-filter>
+            </service>
+            <receiver
+                android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+                android:exported="true"
+                tools:ignore="Instantiatable">
+              <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+              </intent-filter>
+            </receiver>
+            '''
+                text = text.replace('</application>', block + '</application>')
+            manifest.write_text(text)
+            print('Configured Android audio_service manifest.')
+
+            keep = Path('android/app/src/main/res/raw/keep.xml')
+            keep.parent.mkdir(parents=True, exist_ok=True)
+            keep.write_text(
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<resources xmlns:tools="http://schemas.android.com/tools" '
+                'tools:keep="@drawable/*" />\n'
+            )
+
+        info = Path('ios/Runner/Info.plist')
+        if info.exists():
+            with info.open('rb') as handle:
+                data = plistlib.load(handle)
+            modes = data.get('UIBackgroundModes', [])
+            if 'audio' not in modes:
+                modes.append('audio')
+            data['UIBackgroundModes'] = modes
+            with info.open('wb') as handle:
+                plistlib.dump(data, handle)
+            print('Configured iOS audio background mode.')
+
+        podfile = Path('macos/Podfile')
+        if podfile.exists():
+            text = re.sub(
+                r"platform :osx, '[^']+'",
+                "platform :osx, '10.12.2'",
+                podfile.read_text(),
+            )
+            podfile.write_text(text)
+            print('Configured macOS deployment target.')
+        PY
 
     - name: Remove generated placeholder test
       shell: bash

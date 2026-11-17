@@ -107,7 +107,10 @@ block Android, and vice versa. Both use race-safe create-or-update release
 publishing, so they can run concurrently for the same tag.
 
 The shared `.github/actions/setup` action installs Flutter (pinned in one
-place) and generates any missing native platform folders before building.
+place), generates any missing native platform folders and applies the
+`audio_service` Android manifest / iOS background-mode / macOS deployment
+configuration before building. Startup is also guarded so a native audio
+initialization failure cannot leave the app on a black screen.
 
 Because this repository intentionally contains no native platform folders,
 the first CI run generates them from Flutter templates. If you later add
