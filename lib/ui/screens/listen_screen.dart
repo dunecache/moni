@@ -24,7 +24,6 @@ class ListenScreen extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final library = ref.watch(libraryProvider);
     final collection = ref.watch(collectionProvider);
-    final playback = ref.watch(playbackProvider);
     final controller = ref.read(playbackProvider.notifier);
 
     final recents = collection.recentPaths

@@ -39,6 +39,10 @@ runs:
           echo "All platform folders are already present."
         fi
 
+    - name: Remove generated placeholder test
+      shell: bash
+      run: rm -f test/widget_test.dart
+
     - name: Install dependencies
       shell: bash
       run: flutter pub get

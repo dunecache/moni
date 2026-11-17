@@ -16,12 +16,12 @@ void main() {
     });
 
     test('formats duration without hours', () {
-      const track = Track(path: '/a.mp3', title: 'A', artist: 'B', album: 'C', duration: Duration(minutes: 3, seconds: 41));
+      final track = Track(path: '/a.mp3', title: 'A', artist: 'B', album: 'C', duration: Duration(minutes: 3, seconds: 41));
       expect(track.durationLabel, '03:41');
     });
 
     test('JSON round trip preserves metadata', () {
-      const track = Track(
+      final track = Track(
         path: '/a.flac',
         title: 'Song',
         artist: 'Artist',

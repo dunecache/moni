@@ -131,7 +131,7 @@ class PlaybackController extends StateNotifier<PlaybackStateData> {
   Future<void> setShuffle(bool enabled) async {
     await _handler.setShuffle(enabled);
     state = state.copyWith(shuffle: enabled);
-    await _saveSnapshot(state.index, state.position);
+    _saveSnapshot(state.index, state.position);
   }
 
   Future<void> toggleFavorite() async {

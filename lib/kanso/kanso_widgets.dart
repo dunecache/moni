@@ -10,7 +10,7 @@ class KansoSurface extends StatelessWidget {
     required this.child,
     this.padding = EdgeInsets.zero,
     this.border = false,
-    this.radius = KansoRadius.md,
+    this.radius = KansoRadius.medium,
     this.color,
     this.onTap,
   });

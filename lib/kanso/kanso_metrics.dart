@@ -43,11 +43,3 @@ abstract final class KansoMotion {
   static Duration resolve(BuildContext context, Duration duration) =>
       MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
 }
-
-/// Artwork sizes used across list, grid and player layouts.
-abstract final class KansoArtwork {
-  static const double mini = 44;
-  static const double row = 56;
-  static const double card = 132;
-  static const double detail = 192;
-}

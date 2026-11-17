@@ -31,7 +31,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final k = context.kanso;
-    final library = ref.watch(libraryProvider);
     final collection = ref.watch(collectionProvider);
     final playback = ref.watch(playbackProvider);
     final results = ref.read(libraryProvider.notifier).search(_query);

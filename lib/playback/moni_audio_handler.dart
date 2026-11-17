@@ -27,16 +27,16 @@ class MoniAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   final AudioPlayer _player;
   Timer? _positionTicker;
 
-  final void Function(Track? track)? onTrackChanged;
-  final void Function(List<Track> queue, int index)? onQueueChanged;
-  final void Function(int index, Duration position)? onPositionSaved;
+  void Function(Track? track)? onTrackChanged;
+  void Function(List<Track> queue, int index)? onQueueChanged;
+  void Function(int index, Duration position)? onPositionSaved;
 
   final List<Track> _queue = <Track>[];
   final List<Track> _originalQueue = <Track>[];
   int _index = 0;
   bool _shuffle = false;
 
-  List<Track> get queue => List<Track>.unmodifiable(_queue);
+  List<Track> get queueTracks => List<Track>.unmodifiable(_queue);
   int get index => _index;
   Track? get current => _queue.isEmpty ? null : _queue[_index];
   bool get playing => _player.playing;
@@ -69,7 +69,7 @@ class MoniAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
       ConcatenatingAudioSource(children: sources),
       initialIndex: safeIndex,
     );
-    onQueueChanged?.call(queue, _index);
+    onQueueChanged?.call(queueTracks, _index);
     _publishCurrentMedia();
     _publishState();
   }
@@ -190,7 +190,7 @@ class MoniAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
     final shifted = _queue.indexWhere((t) => t.path == currentPath);
     if (shifted >= 0) _index = shifted;
     await _player.seek(position, index: _index);
-    onQueueChanged?.call(queue, _index);
+    onQueueChanged?.call(queueTracks, _index);
     _publishCurrentMedia();
   }
 
@@ -204,7 +204,7 @@ class MoniAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
     if (index == null || index == _index) return;
     if (index >= 0 && index < _queue.length) {
       _index = index;
-      onQueueChanged?.call(queue, _index);
+      onQueueChanged?.call(queueTracks, _index);
       _publishCurrentMedia();
       _publishState();
       onPositionSaved?.call(_index, Duration.zero);

@@ -17,6 +17,10 @@ class CollectionState {
   final List<Playlist> playlists;
   final List<String> recentPaths;
 
+  List<String> get favoritePaths => favorites.toList(growable: false);
+
+  bool isFavorite(String path) => favorites.contains(path);
+
   CollectionState copyWith({
     Set<String>? favorites,
     List<Playlist>? playlists,
