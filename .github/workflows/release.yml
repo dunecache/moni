@@ -1,4 +1,4 @@
-name: Release
+name: Release Android
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-android-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -65,105 +65,25 @@ jobs:
           path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
 
-  linux:
-    name: Linux bundle
-    needs: verify
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Install Linux build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
-
-      - name: Set up Flutter and platform folders
-        uses: ./.github/actions/setup
-
-      - name: Build Linux release
-        run: flutter build linux --release
-
-      - name: Package bundle
-        run: |
-          tar -czf moni-linux-x64.tar.gz -C build/linux/x64/release/bundle .
-
-      - name: Upload Linux bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-bundle
-          path: moni-linux-x64.tar.gz
-          if-no-files-found: error
-
-  macos:
-    name: macOS app
-    needs: verify
-    runs-on: macos-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Flutter and platform folders
-        uses: ./.github/actions/setup
-
-      - name: Build macOS release
-        run: flutter build macos --release
-
-      - name: Package app
-        run: |
-          ditto -c -k --keepParent "build/macos/Build/Products/Release/moni.app" moni-macos.zip
-
-      - name: Upload macOS app
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-app
-          path: moni-macos.zip
-          if-no-files-found: error
-
-  windows:
-    name: Windows app
-    needs: verify
-    runs-on: windows-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Flutter and platform folders
-        uses: ./.github/actions/setup
-
-      - name: Build Windows release
-        run: flutter build windows --release
-
-      - name: Package app
-        shell: pwsh
-        run: |
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath moni-windows-x64.zip -Force
-
-      - name: Upload Windows app
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-app
-          path: moni-windows-x64.zip
-          if-no-files-found: error
-
-  release:
-    name: Publish GitHub release
-    needs: [verify, android, linux, macos, windows]
+  publish:
+    name: Publish Android assets
+    needs: [verify, android]
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Download Android artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: android-apks
           path: dist
           merge-multiple: true
 
-      - name: List release assets
-        run: ls -lah dist
-
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          files: dist/**/*
+      - name: Publish to GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes || true
+          gh release upload "$TAG" dist/* --clobber

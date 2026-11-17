@@ -95,10 +95,16 @@ dedicated SAF document reader and are not supported in this first version.
 
 - `.github/workflows/ci.yml` runs on pushes and pull requests to `main`:
   `flutter analyze`, `flutter test` and the structural/Kanso token check.
-- `.github/workflows/release.yml` runs on tags matching `v*` (or manually via
-  workflow dispatch). It verifies the project, builds Android split APKs, a
-  Linux x64 bundle, a macOS `.app` and a Windows x64 archive, then publishes
-  all artifacts on a GitHub Release with generated notes.
+- `.github/workflows/release.yml` (**Release Android**) runs on tags matching
+  `v*` (or manually): verifies, builds the three split release APKs and uploads
+  them to the GitHub Release.
+- `.github/workflows/release-desktop.yml` (**Release Desktop**) runs on the same
+  tags independently: verifies, builds the Linux x64 bundle, macOS `.app` and
+  Windows x64 archive, and uploads them to the same GitHub Release.
+
+The two release pipelines are independent — a failing desktop build does not
+block Android, and vice versa. Both use race-safe create-or-update release
+publishing, so they can run concurrently for the same tag.
 
 The shared `.github/actions/setup` action installs Flutter (pinned in one
 place) and generates any missing native platform folders before building.

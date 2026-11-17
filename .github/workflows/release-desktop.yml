@@ -1,0 +1,139 @@
+name: Release Desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish (for example v0.1.0)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter and platform folders
+        uses: ./.github/actions/setup
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
+      - name: Validate source structure and Kanso token contract
+        run: node scripts/check_structure.mjs .
+
+  linux:
+    name: Linux bundle
+    needs: verify
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+      - name: Set up Flutter and platform folders
+        uses: ./.github/actions/setup
+
+      - name: Build Linux release
+        run: flutter build linux --release
+
+      - name: Package bundle
+        run: tar -czf moni-linux-x64.tar.gz -C build/linux/x64/release/bundle .
+
+      - name: Upload Linux bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-bundle
+          path: moni-linux-x64.tar.gz
+          if-no-files-found: error
+
+  macos:
+    name: macOS app
+    needs: verify
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter and platform folders
+        uses: ./.github/actions/setup
+
+      - name: Build macOS release
+        run: flutter build macos --release
+
+      - name: Package app
+        run: ditto -c -k --keepParent "build/macos/Build/Products/Release/moni.app" moni-macos.zip
+
+      - name: Upload macOS app
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: moni-macos.zip
+          if-no-files-found: error
+
+  windows:
+    name: Windows app
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter and platform folders
+        uses: ./.github/actions/setup
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Package app
+        shell: pwsh
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath moni-windows-x64.zip -Force
+
+      - name: Upload Windows app
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-app
+          path: moni-windows-x64.zip
+          if-no-files-found: error
+
+  publish:
+    name: Publish desktop assets
+    needs: [verify, linux, macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download desktop artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes || true
+          gh release upload "$TAG" dist/* --clobber
