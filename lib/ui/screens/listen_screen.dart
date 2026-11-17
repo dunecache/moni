@@ -10,7 +10,6 @@ import '../../state/collection_controller.dart';
 import '../../state/playback_controller.dart';
 import '../widgets/album_card.dart';
 import '../widgets/kanso_artwork.dart';
-import '../widgets/track_tile.dart';
 
 class ListenScreen extends ConsumerWidget {
   const ListenScreen({super.key, required this.onOpenSearch, required this.onOpenPlayer});
