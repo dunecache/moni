@@ -10,6 +10,7 @@ import '../../state/collection_controller.dart';
 import '../../state/playback_controller.dart';
 import '../widgets/album_card.dart';
 import '../widgets/kanso_artwork.dart';
+import '../widgets/kanso_dialogs.dart';
 
 class ListenScreen extends ConsumerWidget {
   const ListenScreen({super.key, required this.onOpenSearch, required this.onOpenPlayer});
@@ -35,7 +36,7 @@ class ListenScreen extends ConsumerWidget {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(KansoSpace.page, KansoSpace.xl, KansoSpace.page, KansoSpace.md),
+            padding: const EdgeInsets.fromLTRB(KansoSpace.page, KansoSpace.lg, KansoSpace.page, KansoSpace.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -51,6 +52,7 @@ class ListenScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: k.surfaceSunken,
                       borderRadius: KansoRadius.medium,
+                      border: Border.all(color: k.borderStrong),
                     ),
                     child: Row(
                       children: [
@@ -114,11 +116,24 @@ class ListenScreen extends ConsumerWidget {
         ],
         const SliverToBoxAdapter(child: KansoSectionHeader(title: 'Recently added')),
         if (library.tracks.isEmpty)
-          const SliverToBoxAdapter(
+          SliverFillRemaining(
+            hasScrollBody: false,
             child: KansoEmptyState(
               icon: Icons.library_music_rounded,
               title: 'No music yet',
-              message: 'Add a folder of local audio files in Settings to begin.',
+              message: 'Add a folder of local audio files in Settings, then scan to build your library.',
+              actionLabel: 'Add folder',
+              onAction: () async {
+                final path = await showKansoInputDialog(
+                  context: context,
+                  title: 'Add a music folder',
+                  hint: '/path/to/your/music',
+                  actionLabel: 'Add',
+                  helper: 'Nothing is uploaded. Moni reads tags from the files on your device.',
+                  validate: validateMusicFolderPath,
+                );
+                if (path != null) await ref.read(libraryProvider.notifier).addFolder(path);
+              },
             ),
           )
         else

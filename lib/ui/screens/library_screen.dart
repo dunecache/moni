@@ -9,6 +9,7 @@ import '../../state/app_providers.dart';
 import '../../state/collection_controller.dart';
 import '../../state/playback_controller.dart';
 import '../widgets/album_card.dart';
+import '../widgets/kanso_dialogs.dart';
 import '../widgets/track_tile.dart';
 
 class LibraryScreen extends ConsumerWidget {
@@ -40,13 +41,14 @@ class LibraryScreen extends ConsumerWidget {
             KansoIconButton(
               icon: Icons.tune_rounded,
               tooltip: 'Library folders',
-              onPressed: onOpenSettings,
+              onPressed: library.tracks.isEmpty ? null : onOpenSettings,
             ),
           ],
           bottom: TabBar(
-            labelColor: k.accentStrong,
+            labelColor: k.selectedInk,
             unselectedLabelColor: k.textMuted,
-            indicatorColor: k.accentPrimary,
+            indicatorColor:
+                Theme.of(context).brightness == Brightness.dark ? k.accentPrimary : k.borderStrong,
             dividerColor: k.borderSubtle,
             labelStyle: text.labelMedium,
             tabs: const [
@@ -65,6 +67,7 @@ class LibraryScreen extends ConsumerWidget {
               favoritePaths: collection.favoritePaths.toSet(),
               onPlay: (track) => controller.playTrack(track, context: library.tracks),
               onFavorite: (track) => ref.read(collectionProvider.notifier).toggleFavorite(track.path),
+              onOpenSettings: onOpenSettings,
             ),
             library.albums.isEmpty
                 ? const KansoEmptyState(
@@ -129,6 +132,7 @@ class _SongList extends StatelessWidget {
     required this.favoritePaths,
     required this.onPlay,
     required this.onFavorite,
+    required this.onOpenSettings,
   });
 
   final List<Track> tracks;
@@ -136,14 +140,17 @@ class _SongList extends StatelessWidget {
   final Set<String> favoritePaths;
   final void Function(Track track) onPlay;
   final void Function(Track track) onFavorite;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
     if (tracks.isEmpty) {
-      return const KansoEmptyState(
+      return KansoEmptyState(
         icon: Icons.library_music_rounded,
         title: 'Your library is empty',
         message: 'Add a folder of local audio files in Settings, then scan to build your library.',
+        actionLabel: 'Add folder',
+        onAction: onOpenSettings,
       );
     }
     return ListView.builder(
@@ -182,7 +189,7 @@ class _PlaylistsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: KansoSpace.page),
       children: [
-        const KansoSectionHeader(title: 'Collections'),
+        const KansoSectionHeader(title: 'Collections', inset: false),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: Icon(Icons.favorite_rounded, color: k.accentStrong),
@@ -193,7 +200,7 @@ class _PlaylistsTab extends StatelessWidget {
             onOpenPlaylist('__loved__');
           },
         ),
-        const KansoSectionHeader(title: 'Your playlists'),
+        const KansoSectionHeader(title: 'Your playlists', inset: false),
         ...playlists.map(
           (playlist) => ListTile(
             contentPadding: EdgeInsets.zero,
@@ -222,25 +229,13 @@ class _PlaylistsTab extends StatelessWidget {
     BuildContext context,
     void Function(String name) onCreate,
   ) async {
-    final controller = TextEditingController();
-    final name = await showDialog<String>(
+    final name = await showKansoInputDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New playlist'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Playlist name'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Create'),
-          ),
-        ],
-      ),
+      title: 'New playlist',
+      hint: 'Playlist name',
+      actionLabel: 'Create',
+      helper: 'Playlists live only on this device.',
     );
-    if (name != null && name.trim().isNotEmpty) onCreate(name);
+    if (name != null) onCreate(name);
   }
 }

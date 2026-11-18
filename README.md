@@ -40,6 +40,10 @@ Rules that keep the codebase coherent:
 3. Now Playing is a route, not a navigation tab. Three primary destinations:
    Listen, Library, Settings.
 4. Empty, loading and error surfaces use the shared Kanso components.
+5. Theme parity: a component's metrics and action hierarchy never change
+   between Morning Matcha and Evening Zen — only color tokens do. Filled
+   actions always use the theme-invariant `on-accent` ink; dialogs use the
+   neutral `surfaceElevated` role, never the accent-family `floating` role.
 
 ## Build and run
 

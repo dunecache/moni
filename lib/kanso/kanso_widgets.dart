@@ -72,7 +72,11 @@ class KansoIconButton extends StatelessWidget {
         height: KansoSpace.touch,
         child: IconButton(
           icon: Icon(icon, size: size),
-          color: selected ? k.accentStrong : k.textSecondary,
+          color: onPressed == null
+              ? k.textSecondary.withOpacity(0.4)
+              : selected
+                  ? k.accentStrong
+                  : k.textSecondary,
           onPressed: onPressed,
           tooltip: '',
           constraints: const BoxConstraints(minWidth: KansoSpace.touch, minHeight: KansoSpace.touch),
@@ -106,7 +110,7 @@ class KansoPrimaryButton extends StatelessWidget {
       label: Text(label),
       style: FilledButton.styleFrom(
         backgroundColor: k.accentPrimary,
-        foregroundColor: k.background,
+        foregroundColor: k.onAccent,
         disabledBackgroundColor: k.surfaceSunken,
         disabledForegroundColor: k.textMuted,
         minimumSize: const Size(0, KansoSpace.touch),
@@ -125,16 +129,21 @@ class KansoSectionHeader extends StatelessWidget {
     required this.title,
     this.actionLabel,
     this.onAction,
+    this.inset = true,
   });
 
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
 
+  /// Whether to apply the screen horizontal inset. Set to false only when the
+  /// parent already pads its children (e.g. a padded ListView).
+  final bool inset;
+
   @override
   Widget build(BuildContext context) {
     final k = context.kanso;
-    return Padding(
+    final header = Padding(
       padding: const EdgeInsets.symmetric(vertical: KansoSpace.sm),
       child: Row(
         children: [
@@ -156,6 +165,12 @@ class KansoSectionHeader extends StatelessWidget {
         ],
       ),
     );
+    return inset
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: KansoSpace.page),
+            child: header,
+          )
+        : header;
   }
 }
 
@@ -185,7 +200,7 @@ class KansoEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40, color: k.accentSecondary),
+            Icon(icon, size: 56, color: k.accentSecondary),
             const SizedBox(height: KansoSpace.lg),
             Text(title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
             const SizedBox(height: KansoSpace.sm),

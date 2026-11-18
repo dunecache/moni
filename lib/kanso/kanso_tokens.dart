@@ -30,7 +30,9 @@ class KansoColors {
     required this.accentPrimary,
     required this.accentStrong,
     required this.accentSecondary,
+    required this.onAccent,
     required this.selection,
+    required this.selectedInk,
     required this.focus,
     required this.success,
     required this.warning,
@@ -52,7 +54,15 @@ class KansoColors {
   final Color accentPrimary;
   final Color accentStrong;
   final Color accentSecondary;
+
+  /// Ink for labels drawn on an [accentPrimary] fill. Dark in both modes so
+  /// filled actions keep AA contrast and do not change color on theme switch.
+  final Color onAccent;
   final Color selection;
+
+  /// Ink for the label/icon of a selected nav item or tab. In the light theme
+  /// this must be darker than [textSecondary]: the pill alone is too subtle.
+  final Color selectedInk;
   final Color focus;
   final Color success;
   final Color warning;
@@ -77,7 +87,9 @@ class KansoColors {
     accentPrimary: Color(0xFF89977A),
     accentStrong: Color(0xFF5C664A),
     accentSecondary: Color(0xFFAAB49A),
+    onAccent: Color(0xFF171E16),
     selection: Color(0xFFDCE2D1),
+    selectedInk: Color(0xFF3D4A33),
     focus: Color(0xFF626D4F),
     success: Color(0xFF5C664A),
     warning: Color(0xFF795E2C),
@@ -100,7 +112,9 @@ class KansoColors {
     accentPrimary: Color(0xFFB0C39C),
     accentStrong: Color(0xFFD2E4BB),
     accentSecondary: Color(0xFF829875),
+    onAccent: Color(0xFF171E16),
     selection: Color(0xFF3B4C35),
+    selectedInk: Color(0xFFD2E4BB),
     focus: Color(0xFFB0C39C),
     success: Color(0xFFD2E4BB),
     warning: Color(0xFFD9BD7E),

@@ -152,7 +152,7 @@ class _PlayPauseButton extends StatelessWidget {
         onPressed: () => onPressed(),
         style: FilledButton.styleFrom(
           backgroundColor: k.accentPrimary,
-          foregroundColor: k.background,
+          foregroundColor: k.onAccent,
           shape: const CircleBorder(),
           padding: EdgeInsets.zero,
         ),

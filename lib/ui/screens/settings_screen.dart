@@ -5,6 +5,7 @@ import '../../kanso/kanso_metrics.dart';
 import '../../kanso/kanso_tokens.dart';
 import '../../kanso/kanso_widgets.dart';
 import '../../state/app_providers.dart';
+import '../widgets/kanso_dialogs.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -87,6 +88,32 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (library.error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: KansoSpace.page, vertical: KansoSpace.xs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: KansoSpace.xs),
+                    child: Icon(Icons.error_outline_rounded, size: 18, color: k.danger),
+                  ),
+                  const SizedBox(width: KansoSpace.sm),
+                  Expanded(
+                    child: Text(library.error!, style: text.bodySmall?.copyWith(color: k.danger)),
+                  ),
+                  SizedBox(
+                    width: KansoSpace.touch,
+                    height: KansoSpace.touch,
+                    child: IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      tooltip: 'Dismiss error',
+                      onPressed: () => ref.read(libraryProvider.notifier).dismissError(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (library.isScanning)
             LinearProgressIndicator(
               value: library.progress,
@@ -95,8 +122,12 @@ class SettingsScreen extends ConsumerWidget {
             ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: KansoSpace.page, vertical: KansoSpace.sm),
-            child: Text('${library.tracks.length} songs indexed',
-                style: text.bodySmall?.copyWith(color: k.textMuted)),
+            child: Text(
+              library.isScanning
+                  ? 'Scanning… ${library.tracks.length} found'
+                  : '${library.tracks.length} songs indexed',
+              style: text.bodySmall?.copyWith(color: k.textSecondary),
+            ),
           ),
           const Divider(indent: KansoSpace.page, endIndent: KansoSpace.page),
           KansoSectionHeader(title: 'About'),
@@ -114,24 +145,16 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   static Future<void> _addFolder(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController();
-    final path = await showDialog<String>(
+    final path = await showKansoInputDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add a music folder'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: '/path/to/your/music'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Add')),
-        ],
-      ),
+      title: 'Add a music folder',
+      hint: '/path/to/your/music',
+      actionLabel: 'Add',
+      helper: 'Nothing is uploaded. Moni reads tags from the files on your device.',
+      validate: validateMusicFolderPath,
     );
-    if (path == null || path.trim().isEmpty) return;
-    await ref.read(libraryProvider.notifier).addFolder(path.trim());
+    if (path == null) return;
+    await ref.read(libraryProvider.notifier).addFolder(path);
   }
 }
 
@@ -144,25 +167,35 @@ class _ThemeModeTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final k = context.kanso;
     final current = ref.watch(themeModeProvider);
-    return Column(
-      children: [
-        for (final entry in const <(String, String)>[
-          ('system', 'Follow system'),
-          ('light', 'Morning Matcha'),
-          ('dark', 'Evening Zen'),
-        ])
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: KansoSpace.page),
+    final rows = <Widget>[
+      for (final entry in const <(String, String)>[
+        ('system', 'Follow system'),
+        ('light', 'Morning Matcha'),
+        ('dark', 'Evening Zen'),
+      ])
+        Semantics(
+          container: true,
+          selected: current == entry.$1,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: KansoSpace.md),
             title: Text(entry.$2, style: Theme.of(context).textTheme.bodyMedium),
             trailing: current == entry.$1
-                ? Icon(Icons.check_rounded, color: k.accentStrong, size: 20)
+                ? Icon(Icons.check_rounded, color: k.selectedInk, size: 20)
                 : null,
             onTap: () {
               ref.read(themeModeProvider.notifier).state = entry.$1;
               ref.read(preferencesProvider).setThemeMode(entry.$1);
             },
           ),
-      ],
+        ),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: KansoSpace.page),
+      child: KansoSurface(
+        padding: const EdgeInsets.symmetric(vertical: KansoSpace.xs),
+        radius: KansoRadius.large,
+        child: Column(children: rows),
+      ),
     );
   }
 }

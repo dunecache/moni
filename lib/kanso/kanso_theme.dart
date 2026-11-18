@@ -18,7 +18,7 @@ TextTheme buildKansoTextTheme({required bool useBundledFonts}) {
     headlineMedium:
         TextStyle(fontFamily: display, fontSize: 22, height: 1.2, fontWeight: FontWeight.w600, letterSpacing: -0.01),
     titleLarge:
-        TextStyle(fontFamily: display, fontSize: 18, height: 1.3, fontWeight: FontWeight.w600, letterSpacing: -0.005),
+        TextStyle(fontFamily: display, fontSize: 20, height: 1.3, fontWeight: FontWeight.w600, letterSpacing: -0.005),
     titleMedium:
         TextStyle(fontFamily: text, fontSize: 15, height: 1.35, fontWeight: FontWeight.w600),
     titleSmall:
@@ -50,11 +50,11 @@ ThemeData buildKansoTheme(KansoMode mode) {
     brightness: brightness,
   ).copyWith(
     primary: c.accentPrimary,
-    onPrimary: c.background,
+    onPrimary: c.onAccent,
     primaryContainer: c.selection,
     onPrimaryContainer: c.accentStrong,
     secondary: c.accentSecondary,
-    onSecondary: c.background,
+    onSecondary: c.onAccent,
     surface: c.surface,
     onSurface: c.textPrimary,
     error: c.danger,
@@ -100,21 +100,22 @@ ThemeData buildKansoTheme(KansoMode mode) {
       labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
         final selected = states.contains(WidgetState.selected);
         return textTheme.labelSmall!.copyWith(
-          color: selected ? c.accentStrong : c.textMuted,
+          color: selected ? c.selectedInk : c.textMuted,
           fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
         );
       }),
       iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
         final selected = states.contains(WidgetState.selected);
-        return IconThemeData(color: selected ? c.accentStrong : c.textMuted, size: 22);
+        return IconThemeData(color: selected ? c.selectedInk : c.textMuted, size: 22);
       }),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: c.surfaceSunken,
       hintStyle: textTheme.bodyMedium?.copyWith(color: c.textMuted),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.borderStrong)),
+      enabledBorder:
+          OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: c.borderStrong)),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: c.focus, width: 1.5),
@@ -142,7 +143,7 @@ ThemeData buildKansoTheme(KansoMode mode) {
       ),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: c.floating,
+      backgroundColor: c.surfaceElevated,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -173,7 +174,7 @@ ThemeData buildKansoTheme(KansoMode mode) {
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
         if (states.contains(WidgetState.disabled)) return c.borderStrong;
-        return states.contains(WidgetState.selected) ? c.background : c.textMuted;
+        return states.contains(WidgetState.selected) ? c.onAccent : c.textMuted;
       }),
       trackColor: WidgetStateProperty.resolveWith<Color>((states) {
         if (states.contains(WidgetState.selected)) return c.accentPrimary;

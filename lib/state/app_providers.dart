@@ -27,6 +27,7 @@ class LibraryState {
     this.folders = const <String>[],
     this.isScanning = false,
     this.progress = 0,
+    this.error,
   });
 
   final List<Track> tracks;
@@ -36,6 +37,10 @@ class LibraryState {
   final bool isScanning;
   final double progress;
 
+  /// Last scan/preferences failure, shown inline in Settings. Cleared on the
+  /// next successful action or when the user dismisses it.
+  final String? error;
+
   LibraryState copyWith({
     List<Track>? tracks,
     List<Album>? albums,
@@ -43,6 +48,8 @@ class LibraryState {
     List<String>? folders,
     bool? isScanning,
     double? progress,
+    String? error,
+    bool clearError = false,
   }) =>
       LibraryState(
         tracks: tracks ?? this.tracks,
@@ -51,6 +58,7 @@ class LibraryState {
         folders: folders ?? this.folders,
         isScanning: isScanning ?? this.isScanning,
         progress: progress ?? this.progress,
+        error: clearError ? null : error ?? this.error,
       );
 }
 
@@ -84,9 +92,11 @@ class LibraryController extends StateNotifier<LibraryState> {
     );
   }
 
+  void dismissError() => state = state.copyWith(clearError: true);
+
   Future<void> rescan() async {
     if (state.isScanning) return;
-    state = state.copyWith(isScanning: true, progress: 0);
+    state = state.copyWith(isScanning: true, progress: 0, clearError: true);
     try {
       final tracks = await _repo.scan(
         _prefs.folders,
@@ -95,6 +105,8 @@ class LibraryController extends StateNotifier<LibraryState> {
         },
       );
       await _prefs.writeLibraryCache(tracks);
+    } catch (error) {
+      state = state.copyWith(error: _message(error));
     } finally {
       state = state.copyWith(isScanning: false, progress: 1);
       _publish();
@@ -102,15 +114,28 @@ class LibraryController extends StateNotifier<LibraryState> {
   }
 
   Future<void> addFolder(String path) async {
-    final folders = {..._prefs.folders, path}.toList()..sort();
-    await _prefs.setFolders(folders);
-    _publish();
-    await rescan();
+    try {
+      final folders = {..._prefs.folders, path}.toList()..sort();
+      await _prefs.setFolders(folders);
+      _publish();
+      await rescan();
+    } catch (error) {
+      state = state.copyWith(error: _message(error));
+    }
   }
 
   Future<void> removeFolder(String path) async {
-    final folders = _prefs.folders.where((f) => f != path).toList();
-    await _prefs.setFolders(folders);
-    await rescan();
+    try {
+      final folders = _prefs.folders.where((f) => f != path).toList();
+      await _prefs.setFolders(folders);
+      await rescan();
+    } catch (error) {
+      state = state.copyWith(error: _message(error));
+    }
+  }
+
+  static String _message(Object error) {
+    final text = error.toString().replaceFirst('Exception: ', '');
+    return 'Something went wrong while reading your music. $text';
   }
 }
